@@ -122,7 +122,7 @@ sensor:
     attenuation: 12dB
     samples: 10
     filters:
-      - multiply: 1.3091
+      - multiply: 1.455
   # PCB thermistor
   - platform: ntc
     name: "Ambient Temperature"
