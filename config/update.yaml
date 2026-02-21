@@ -1,0 +1,8 @@
+packages:
+  granzscientific.bm1-base: !include base.yaml
+
+dashboard_import:
+  package_import_url: github://granzscientific/sn1-solar-node/gs-sn1-solar-node.yaml
+
+esphome:
+  name_add_mac_suffix: true

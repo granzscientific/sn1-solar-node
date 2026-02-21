@@ -1,0 +1,204 @@
+substitutions:
+  name: gs-sn1-solar-node
+  friendly_name: "GS SN1 Solar Node"
+
+  # See https://esphome.io/components/esphome.html#esphome-creators-project
+  project_name: GranzScientific.SN1-Solar-Node
+  project_ver_num: "1.0"
+  project_ver_let: a
+
+  # BM1 specific configuration
+  battery_low_warning_level: 3.2
+
+  # ota-sleep-control.yaml module overrides
+  wait_for_initial_setup_duration: 5min
+  wait_for_wifi_duration: 10s
+  wait_for_api_connection_duration: 30s
+  wait_for_ota_update_mode_duration: 5s
+  sleep_duration: 15min
+
+packages:
+  granzscientific.sn1-ota: github://granzscientific/esphome-tools/config/ota-sleep-control.yaml
+
+esphome:
+  project:
+    name: ${project_name}
+    version: ${project_ver_num}(${project_ver_let})
+  name: ${name}
+  friendly_name: ${friendly_name}
+  on_boot:
+    then:
+      - script.execute: scr_sleep_control
+      - script.wait: scr_sleep_control
+
+# ESP32 version and framework
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: esp-idf
+
+# https://esphome.io/components/esphome.html#adjusting-flash-writes
+preferences:
+  flash_write_interval: 5min
+
+# Enable logging
+logger:
+  level: DEBUG
+  logs:
+    # Prevent spamming from ntc_power switch
+    switch: INFO
+    rtttl: INFO
+
+# Enable Home Assistant API
+api:
+  id: gs_api
+  # **** No API encryption key by default.  You should add one in your config!
+
+# https://esphome.io/components/ota.html
+ota:
+  - platform: esphome
+    # **** No OTA password by default.  You should add one in your config!
+    on_error:
+      - button.press: restart_button
+
+wifi:
+  id: wifi_wificomponent_id # For some reason, if any other id name is used this won't compile
+  # Enable fallback access point (captive portal) in case wifi credentials missing
+  ap:
+    ssid: ${friendly_name}
+    password: "12345678"
+    # Disable AP when we have wifi credentials stored in nvmem
+    # Note that, after a factory reset we still have an AP no matter what
+    ap_timeout: 0s
+
+web_server:
+  port: 80
+  local: true # Embed the web server data to allow it work without internet access
+  ota: false  # Disables OTA through regular web interface
+
+# Captive portal automatically enables web server OTA platform
+# OTA will only be accessible when captive portal is active
+captive_portal:
+
+# Factory reset the device if power is cycled 5 times, with less than 5 seconds each time
+# This clears WiFi credentials and allows the device to be setup again
+# https://esphome.io/components/factory_reset/
+factory_reset:
+  resets_required: 5
+  max_delay: 5s
+
+# Buttons
+button:
+  # https://esphome.io/components/button/restart.html
+  - platform: restart
+    id: restart_button
+    name: Restart Firmware
+    entity_category: diagnostic
+
+# Switches
+switch:
+  # Factory reset switch (clear wifi credentials, etc)
+  - platform: factory_reset
+    name: "Factory Reset"
+  # Switch to power NTC to avoid battery drain when not being read
+  - platform: gpio
+    id: ntc_pwr
+    pin: GPIO3
+    internal: True # Hide from home assistant
+
+# Sensors
+sensor:
+  # ESP32 internal temperature sensor
+  - platform: internal_temperature
+    name: "MCU Internal Temperature"
+    update_interval: 5s
+  # Battery voltage from voltage-divider
+  - platform: adc
+    id: battery_sensor
+    name: "Battery Voltage"
+    pin: GPIO0
+    # Never update, since we trigger it from the interval block below
+    update_interval: never
+    attenuation: 12dB
+    samples: 10
+    filters:
+      - multiply: 1.3091
+  # PCB thermistor
+  - platform: ntc
+    name: "Ambient Temperature"
+    sensor: ntc_resistance_sensor
+    calibration:
+      b_constant: 3900
+      reference_temperature: 25°C
+      reference_resistance: 10kOhm
+  - platform: resistance
+    id: ntc_resistance_sensor
+    name: "NTC Resistance"
+    sensor: ntc_source_sensor
+    configuration: DOWNSTREAM
+    resistor: 10.0kOhm
+    internal: True # Hide from home assisstant
+  - platform: adc
+    id: ntc_source_sensor
+    name: "NTC Voltage"
+    pin: GPIO1
+    # Never update, since we trigger it from the interval block below
+    update_interval: never
+    attenuation: 12dB
+    internal: True # Hide from home assisstant
+
+# Intervals to read voltage, temperature and control buzzer and LED
+interval:
+  - interval: 1s
+    then:
+      - if:
+          condition:
+            lambda: 'return (id(ota_sleep_control_state) != 0);'
+          then:
+            - output.turn_on: led_out
+          else:
+            - output.turn_off: led_out
+  - interval: 5s
+    startup_delay: 5s
+    then:
+      - if:
+          condition:
+            lambda: 'return (id(ota_sleep_control_state) == 0);'
+          then:
+            - output.turn_on: led_out
+      - component.update: battery_sensor
+      - switch.turn_on: ntc_pwr
+      - component.update: ntc_source_sensor
+      - switch.turn_off: ntc_pwr
+      - if:
+          condition:
+            lambda: 'return (id(battery_sensor).state < ${battery_low_warning_level});'
+          then:
+            - logger.log:
+                format: "Battery voltage is %.1fV, below threshold of ${battery_low_warning_level}V"
+                args: [id(battery_sensor).state]
+                level: ERROR
+            - rtttl.play: 'two_short:d=4,o=5,b=100:16e6,16e6'
+      - if:
+          condition:
+            lambda: 'return (id(ota_sleep_control_state) == 0);'
+          then:
+            - output.turn_off: led_out
+
+# Configure the PWM outputs to drive the LED and buzzer
+output:
+  - platform: ledc
+    id: led_out
+    pin: GPIO6
+    channel: 4
+  - platform: ledc
+    id: buzzer_out
+    pin: GPIO7
+    channel: 0
+
+# Buzzer tone module
+rtttl:
+  output: buzzer_out
+  id: buzzer
+  gain: 100%
+
