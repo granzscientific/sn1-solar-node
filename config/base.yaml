@@ -116,11 +116,13 @@ sensor:
   - platform: adc
     id: battery_sensor
     name: "Battery Voltage"
+    icon: "mdi:battery-medium"
+    device_class: "battery"
+    state_class: "measurement"
     pin: GPIO0
-    # Never update, since we trigger it from the interval block below
-    update_interval: never
-    attenuation: 12dB
-    samples: 10
+    accuracy_decimals: 1
+    update_interval: never # Never update, since we trigger it from the interval block below
+    attenuation: auto
     filters:
       - multiply: 1.455
   # PCB thermistor
@@ -142,8 +144,7 @@ sensor:
     id: ntc_source_sensor
     name: "NTC Voltage"
     pin: GPIO1
-    # Never update, since we trigger it from the interval block below
-    update_interval: never
+    update_interval: never # Never update, since we trigger it from the interval block below
     attenuation: 12dB
     internal: True # Hide from home assisstant
 
