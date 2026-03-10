@@ -108,6 +108,21 @@ switch:
 
 # Sensors
 sensor:
+  # WiFi signal strength/RSSI in dB
+  - platform: wifi_signal
+    name: "WiFi Signal dB"
+    id: wifi_signal_db
+    entity_category: "diagnostic"
+    update_interval: 5s
+  #  WiFi signal strength in %
+  - platform: copy
+    source_id: wifi_signal_db
+    name: "WiFi Signal Strength"
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "%"
+    entity_category: "diagnostic"
+    device_class: ""
   # ESP32 internal temperature sensor
   - platform: internal_temperature
     name: "MCU Internal Temperature"
@@ -116,8 +131,7 @@ sensor:
   - platform: adc
     id: battery_sensor
     name: "Battery Voltage"
-    icon: "mdi:battery-medium"
-    device_class: "battery"
+    icon: "mdi:battery"
     state_class: "measurement"
     pin: GPIO0
     accuracy_decimals: 1
@@ -125,6 +139,18 @@ sensor:
     attenuation: auto
     filters:
       - multiply: 1.455
+  # Battery percentage (derived from voltage)
+  - platform: template
+    id: battery_percentage
+    name: "Battery Level"
+    icon: "mdi:battery"
+    device_class: "battery"
+    # Never update, since we trigger it from the interval block below
+    update_interval: never
+    unit_of_measurement: "%"
+    lambda: |-
+      float percentage = ((id(battery_sensor).state - 2.5f) * 70.0f);
+      return min(max(percentage, 0.0f), 100.0f);
   # PCB thermistor
   - platform: ntc
     name: "Ambient Temperature"
