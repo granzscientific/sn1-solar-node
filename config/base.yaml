@@ -156,7 +156,7 @@ sensor:
     name: "Ambient Temperature"
     sensor: ntc_resistance_sensor
     calibration:
-      b_constant: 3900
+      b_constant: 3950
       reference_temperature: 25°C
       reference_resistance: 10kOhm
   - platform: resistance
