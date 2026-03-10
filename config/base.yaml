@@ -194,6 +194,7 @@ interval:
           then:
             - output.turn_on: led_out
       - component.update: battery_sensor
+      - component.update: battery_percentage
       - switch.turn_on: ntc_pwr
       - component.update: ntc_source_sensor
       - switch.turn_off: ntc_pwr
