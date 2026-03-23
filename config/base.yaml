@@ -1,5 +1,5 @@
 substitutions:
-  name: gs-sn1-solar-node
+  name: gs-sn1
   friendly_name: "GS SN1 Solar Node"
 
   # See https://esphome.io/components/esphome.html#esphome-creators-project
