@@ -4,7 +4,7 @@ substitutions:
 
   # See https://esphome.io/components/esphome.html#esphome-creators-project
   project_name: GranzScientific.SN1-Solar-Node
-  project_ver_num: "1.1"
+  project_ver_num: "1.2"
   project_ver_let: a
 
   # ota-sleep-control.yaml module overrides
@@ -99,10 +99,10 @@ switch:
   - platform: factory_reset
     name: "Factory Reset"
   # Switch to power NTC to avoid battery drain when not being read
-  - platform: gpio
-    id: ntc_pwr
-    pin: GPIO3
-    internal: True # Hide from home assistant
+#  - platform: gpio
+#    id: ntc_pwr
+#    pin: GPIO3
+#    internal: True # Hide from home assistant
 
 # Sensors
 sensor:
@@ -150,62 +150,62 @@ sensor:
       float percentage = ((id(battery_sensor).state - 2.5f) * 70.0f);
       return min(max(percentage, 0.0f), 100.0f);
   # PCB thermistor
-  - platform: ntc
-    name: "Ambient Temperature"
-    sensor: ntc_resistance_sensor
-    calibration:
-      b_constant: 3950
-      reference_temperature: 25°C
-      reference_resistance: 10kOhm
-  - platform: resistance
-    id: ntc_resistance_sensor
-    name: "NTC Resistance"
-    sensor: ntc_source_sensor
-    configuration: DOWNSTREAM
-    resistor: 10.0kOhm
-    internal: True # Hide from home assisstant
-  - platform: adc
-    id: ntc_source_sensor
-    name: "NTC Voltage"
-    pin: GPIO1
-    update_interval: never # Never update, since we trigger it from the interval block below
-    attenuation: 12dB
-    internal: True # Hide from home assisstant
+#  - platform: ntc
+#    name: "Ambient Temperature"
+#    sensor: ntc_resistance_sensor
+#    calibration:
+#      b_constant: 3950
+#      reference_temperature: 25°C
+#      reference_resistance: 10kOhm
+#  - platform: resistance
+#    id: ntc_resistance_sensor
+#    name: "NTC Resistance"
+#    sensor: ntc_source_sensor
+#    configuration: DOWNSTREAM
+#    resistor: 10.0kOhm
+#    internal: True # Hide from home assisstant
+#  - platform: adc
+#    id: ntc_source_sensor
+#    name: "NTC Voltage"
+#    pin: GPIO1
+#    update_interval: never # Never update, since we trigger it from the interval block below
+#    attenuation: 12dB
+#    internal: True # Hide from home assisstant
 
 # Intervals to read voltage and temperature and control LED
 interval:
-  - interval: 1s
-    then:
-      - if:
-          condition:
-            lambda: 'return (id(ota_sleep_control_state) != 0);'
-          then:
-            - output.turn_on: led_out
-          else:
-            - output.turn_off: led_out
+#  - interval: 1s
+#    then:
+#      - if:
+#          condition:
+#            lambda: 'return (id(ota_sleep_control_state) != 0);'
+#          then:
+#            - output.turn_on: led_out
+#          else:
+#            - output.turn_off: led_out
   - interval: 5s
     startup_delay: 5s
     then:
-      - if:
-          condition:
-            lambda: 'return (id(ota_sleep_control_state) == 0);'
-          then:
-            - output.turn_on: led_out
+#      - if:
+#          condition:
+#            lambda: 'return (id(ota_sleep_control_state) == 0);'
+#          then:
+#            - output.turn_on: led_out
       - component.update: battery_sensor
       - component.update: battery_percentage
-      - switch.turn_on: ntc_pwr
-      - component.update: ntc_source_sensor
-      - switch.turn_off: ntc_pwr
-      - if:
-          condition:
-            lambda: 'return (id(ota_sleep_control_state) == 0);'
-          then:
-            - output.turn_off: led_out
+#      - switch.turn_on: ntc_pwr
+#      - component.update: ntc_source_sensor
+#      - switch.turn_off: ntc_pwr
+#      - if:
+#          condition:
+#            lambda: 'return (id(ota_sleep_control_state) == 0);'
+#          then:
+#            - output.turn_off: led_out
 
-# Configure the PWM outputs to drive the LED and buzzer
-output:
-  - platform: ledc
-    id: led_out
-    pin: GPIO6
-    channel: 4
+# Configure outputs to drive on board LED
+#output:
+#  - platform: ledc
+#    id: led_out
+#    pin: GPIO6
+#    channel: 4
 
