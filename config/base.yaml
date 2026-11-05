@@ -4,7 +4,7 @@ substitutions:
 
   # See https://esphome.io/components/esphome.html#esphome-creators-project
   project_name: GranzScientific.SN1-Solar-Node
-  project_ver_num: "1.2"
+  project_ver_num: "1.3"
   project_ver_let: a
 
   # ota-sleep-control.yaml module overrides
