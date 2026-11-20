@@ -11,11 +11,10 @@ substitutions:
   wait_for_initial_setup_duration: 5min
   wait_for_wifi_duration: 10s
   wait_for_api_connection_duration: 30s
-  wait_for_ota_update_mode_duration: 5s
   sleep_duration: 15min
 
 packages:
-  granzscientific.sn1-ota: github://granzscientific/esphome-tools/config/ota-sleep-control.yaml
+  granzscientific.sn1-ota: github://granzscientific/esphome-tools/config/sleep-control.yaml
 
 esphome:
   project:
